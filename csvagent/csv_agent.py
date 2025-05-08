@@ -1,3 +1,5 @@
+from idlelib.query import Query
+
 from langchain.schema import HumanMessage, SystemMessage
 import os
 from dotenv import load_dotenv
@@ -13,7 +15,7 @@ llm_name = "claude-3-haiku-20240307"
 model = ChatAnthropic(api_key=anthropic_api_key, model=llm_name)
 
 #We want to read the csv file
-df= pd.read_csv("../data/Academic performance retention dataset.csv").fillna(value=0)
+df= pd.read_csv("./data/Academic performance retention dataset.csv").fillna(value=0)
 #print(df.head())
 
 from langchain_experimental.agents.agent_toolkits import (
@@ -53,9 +55,28 @@ only use the results of the CALCULATIONS YOU HAVE DONE**.
 In the explanation, mention the column names that you used to get the final answer.
 """
 
-question = "What is the mean age of students?"
-response = agent.invoke(CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX)
-print(response)
+#question = "What is the mean age of students?"
+#response = agent.invoke(CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX)
+# print(response)
 
 ##Without the prompt when asking the agent what is the mean age of students I got an error
 ##With the prompt we got an answer
+
+import streamlit as st
+
+st.title("CSV Agent")
+st.write("### Dataset Preview")
+st.write(df.head())
+
+##Lets allow the user to write their own question
+st.write("### Ask a Question")
+question = st.text_input(
+    "Enter you question about the dataset:"
+)
+
+#we need to creat a button for the search query
+if st.button("Run Query"):
+    query = CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX
+    response = agent.invoke(query)
+    st.write("Final Answer")
+    st.markdown(response["output"])
