@@ -22,35 +22,6 @@ messages = [
     HumanMessage(content="who was the very first computer scientist?"),
 ]
 
-#if we want to run it we pass the messages to the model
-# res = model.invoke(messages)
-# print(res)
-
-#The example above is hard coded
-#What is we want to let the user input their own question
-
-# First function
-# def first_agent(messages):
-#     res = model.invoke(messages)
-#     return res
-#
-# # second function that will include a loop and take user function
-# def run_agent():
-#     print("Simple AI Agent: Type 'exit' to quit")
-#     while True:
-#         user_input = input("You: ")
-#         if user_input.lower() == "exit":
-#             print("Goodbye, you have quit")
-#             break
-#         print("AI Agent is thinking...")
-#         messages = [HumanMessage(content=user_input)]
-#         response = first_agent(messages)
-#         print("AI Agent: getting the response...")
-#         print(f"AI Agent: {response.content}")
-#
-# if __name__ == "__main__":
-#     run_agent()
-
 def first_agent(conversation):
     res = model.invoke(conversation)
     return res
