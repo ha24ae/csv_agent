@@ -65,74 +65,56 @@ CSV_PROMPT_SUFFIX ="""
 # response = agent.invoke(CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX)
 # print(response)
 
-##note
-##Without the prompt when asking the agent what is the mean age of students I got an error
-##With the prompt we got an answer
-
-# def run_csv_agent():
-#     print("Simple CSV query AI Agent: Type 'exit' to quit")
-#     while True:
-#         user_input = input("You: ")
-#         if user_input.lower() == "exit":
-#             print("Goodbye, you have quit")
-#             break
-#         print("AI Agent is thinking...")
-#         response = agent.invoke(CSV_PROMPT_PREFIX + user_input + CSV_PROMPT_SUFFIX)
-#         print("AI Agent: getting the response...")
-#         print(f"AI Agent: {response}")
-#
-# if __name__ == "__main__":
-#     run_csv_agent()
-
-# def run_agent():
-#     print("Simple AI Agent: Type 'exit' to quit")
-#
-#     conversation = []
-#
-#     while True:
-#         user_input = input("You: ")
-#         if user_input.lower() == "exit":
-#             print("Goodbye, you have quit")
-#             break
-#         print("AI Agent is thinking...")
-#
-#         conversation.append(HumanMessage(content=user_input))
-#         print(conversation)
-#         question = CSV_PROMPT_PREFIX + user_input + CSV_PROMPT_SUFFIX
-#         # messages = [HumanMessage(content=user_input)]
-#         response = csv_agent(conversation)
-#         conversation.append(AIMessage(content=response.content))
-#
-#
-#         print("AI Agent: getting the response...")
-#         print(f"AI Agent: {response.content}")
-#
-#
-#         print("\n--- Conversation History ---")
-#         for message in conversation:
-#             print(f"{message.__class__.__name__}: {message.content}")
-#         print("----------------------------\n")
-#
-# if __name__ == "__main__":
-#     run_agent()
-
-
 import streamlit as st
 
 st.title("CSV Agent")
-st.write("### Dataset Preview")
-st.write(df.head())
+st.write("### Upload Your Own CSV File")
+uploaded_file = st.file_uploader("Upload your CSV file", type=["csv"])
 
-# ##Lets allow the user to write their own question
-st.write("### Ask a Question on this dataset")
-question = st.text_input(
-    "Enter you question about the dataset:"
-)
+if uploaded_file is not None:
+    # Read CSV into DataFrame
+    df = pd.read_csv(uploaded_file).fillna(0)
 
-#we need to creat a button for the search query
-if st.button("Run Query"):
-    query = CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX
-    response = agent.invoke(query)
-    st.write("Final Answer")
-    st.markdown(response["output"])
+    st.write("### Dataset Preview")
+    st.write(df.head())
 
+    #Create a new agent from the uploaded CSV
+    agent = create_pandas_dataframe_agent(
+        llm=model,
+        df=df,
+        verbose=True,
+        allow_dangerous_code=True
+    )
+
+    #Define your enhanced prompt structure
+    CSV_PROMPT_PREFIX = """
+        First set the pandas display options to show all the columns,
+        get the column names,
+        then answer the question
+    """
+    CSV_PROMPT_SUFFIX = """
+    - **ALWAYS** before giving the Final Answer, try another method.
+    Then reflect on the answers of the two methods you did and ask yourself?
+    if it correctly answers the original question.
+    If you are not sure, try another method.
+    - If the methods tried do not give the same result, reflect and try again until you have two methods that have the same result.
+    - If you still can not arrive to a consistent result, say that you are not sure of the answer.
+    - If you are sure of the correct answer, create a beautiful and thorough response using Markdown.
+    - ***DO NOT MAKE UP AN ANSWER OR USE PRIOR KNOWLEDGE,
+    only use the results of the CALCULATIONS YOU HAVE DONE**.
+    - **ALWAYS**, as part of your "Final Answer", explain how you got to the answer on a section that starts with:"\n\nExplanation:\n".
+    In the explanation, mention the column names that you used to get the final answer.
+    """
+
+    # Get user's question
+    st.write("### Ask a Question")
+    question = st.text_input("Enter your question about the dataset:")
+
+    if st.button("Run Query"):
+        query = CSV_PROMPT_PREFIX + question + CSV_PROMPT_SUFFIX
+        response = agent.invoke(query)
+        st.write("Final Answer")
+        st.markdown(response["output"])
+
+else:
+    st.info("Please upload a CSV file to get started.")
